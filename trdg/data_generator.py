@@ -3,8 +3,9 @@ import random as rnd
 
 from PIL import Image, ImageFilter, ImageStat
 
-from trdg import computer_text_generator, background_generator, distorsion_generator
-from trdg.utils import mask_to_bboxes, make_filename_valid
+from trdg import (background_generator, computer_text_generator,
+                  distorsion_generator)
+from trdg.utils import make_filename_valid, mask_to_bboxes
 
 try:
     from trdg import handwritten_text_generator
@@ -24,37 +25,37 @@ class FakeTextDataGenerator(object):
     @classmethod
     def generate(
         cls,
-        index: int,
-        text: str,
-        font: str,
-        out_dir: str,
-        size: int,
-        extension: str,
-        skewing_angle: int,
-        random_skew: bool,
-        blur: int,
-        random_blur: bool,
-        background_type: int,
-        distorsion_type: int,
-        distorsion_orientation: int,
-        is_handwritten: bool,
-        name_format: int,
-        width: int,
-        alignment: int,
-        text_color: str,
-        orientation: int,
-        space_width: int,
-        character_spacing: int,
-        margins: int,
-        fit: bool,
-        output_mask: bool,
-        word_split: bool,
-        image_dir: str,
-        stroke_width: int = 0,
-        stroke_fill: str = "#282828",
-        image_mode: str = "RGB",
-        output_bboxes: int = 0,
-    ) -> Image:
+        index,
+        text,
+        fonts,
+        out_dir,
+        size,
+        extension,
+        skewing_angle,
+        random_skew,
+        blur,
+        random_blur,
+        background_type,
+        distorsion_type,
+        distorsion_orientation,
+        is_handwritten,
+        name_format,
+        width,
+        alignment,
+        text_color,
+        orientation,
+        space_width,
+        character_spacing,
+        margins,
+        fit,
+        output_mask,
+        word_split,
+        image_dir,
+        stroke_width=0,
+        stroke_fill="#282828",
+        image_mode="RGB",
+        output_bboxes=0,
+    ):
         image = None
 
         margin_top, margin_left, margin_bottom, margin_right = margins
@@ -71,7 +72,7 @@ class FakeTextDataGenerator(object):
         else:
             image, mask = computer_text_generator.generate(
                 text,
-                font,
+                fonts,
                 text_color,
                 size,
                 orientation,
@@ -131,11 +132,9 @@ class FakeTextDataGenerator(object):
                 * (float(size - vertical_margin) / float(distorted_img.size[1]))
             )
             resized_img = distorted_img.resize(
-                (new_width, size - vertical_margin), Image.Resampling.LANCZOS
+                (new_width, size - vertical_margin), Image.LANCZOS
             )
-            resized_mask = distorted_mask.resize(
-                (new_width, size - vertical_margin), Image.Resampling.NEAREST
-            )
+            resized_mask = distorted_mask.resize((new_width, size - vertical_margin), Image.NEAREST)
             background_width = width if width > 0 else new_width + horizontal_margin
             background_height = size
         # Vertical text
@@ -145,10 +144,10 @@ class FakeTextDataGenerator(object):
                 * (float(size - horizontal_margin) / float(distorted_img.size[0]))
             )
             resized_img = distorted_img.resize(
-                (size - horizontal_margin, new_height), Image.Resampling.LANCZOS
+                (size - horizontal_margin, new_height), Image.LANCZOS
             )
             resized_mask = distorted_mask.resize(
-                (size - horizontal_margin, new_height), Image.Resampling.NEAREST
+                (size - horizontal_margin, new_height), Image.NEAREST
             )
             background_width = size
             background_height = new_height + vertical_margin

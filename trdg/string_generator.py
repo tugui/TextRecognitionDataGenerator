@@ -126,8 +126,8 @@ def create_strings_randomly(
         min_seq_len = 1
         max_seq_len = 2
     else:
-        min_seq_len = 2
-        max_seq_len = 10
+        min_seq_len = 1
+        max_seq_len = 32
 
     strings = []
     for _ in range(0, count):
