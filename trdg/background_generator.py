@@ -13,7 +13,10 @@ def gaussian_noise(height: int, width: int) -> Image:
     """
 
     # We create an all white image
-    image = np.ones((height, width, 3), dtype=np.uint8) * rnd.randint(240, 255)
+    channel1 = np.ones((height, width), dtype=np.uint8) * rnd.randint(240, 255)
+    channel2 = np.ones((height, width), dtype=np.uint8) * rnd.randint(240, 255)
+    channel3 = np.ones((height, width), dtype=np.uint8) * rnd.randint(240, 255)
+    image = np.dstack((channel1, channel2, channel3))
 
     # We add gaussian noise
     cv2.randn(
