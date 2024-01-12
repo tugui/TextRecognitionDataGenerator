@@ -260,11 +260,7 @@ def _generate_horizontal_text(
         )
 
     if "\\\\" in new_text:
-        new_text = (
-            "\\begin{matrix} "
-            + " ".join(new_text).replace("   ", " ")
-            + " \\end{matrix}"
-        )
+        new_text = " ".join(new_text).replace("   ", " ")
     else:
         new_text = text
 
