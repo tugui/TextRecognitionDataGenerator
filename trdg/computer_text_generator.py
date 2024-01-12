@@ -1,9 +1,12 @@
+import colorsys
+import math
 import random as rnd
 from typing import Tuple
-from PIL import Image, ImageColor, ImageDraw, ImageFilter, ImageFont
+
 import numpy as np
-from trdg.utils import get_text_width, get_text_height
-import colorsys
+from PIL import Image, ImageColor, ImageDraw, ImageFilter, ImageFont
+
+from trdg.utils import get_text_height, get_text_width
 
 # Thai Unicode reference: https://jrgraphix.net/r/Unicode/0E00-0E7F
 TH_TONE_MARKS = [
@@ -32,6 +35,8 @@ def generate(
     word_split,
     stroke_width=0,
     stroke_fill="#282828",
+    multi_line=False,
+    line_max=32,
 ):
     if orientation == 0:
         return _generate_horizontal_text(
@@ -45,6 +50,8 @@ def generate(
             word_split,
             stroke_width,
             stroke_fill,
+            multi_line,
+            line_max,
         )
     elif orientation == 1:
         return _generate_vertical_text(
@@ -72,6 +79,20 @@ def _compute_character_width(image_font, character):
     return round(image_font.getlength(character))
 
 
+def split_integer_evenly(num, n):
+    quotient = num // n  # Integer division to get the quotient
+    remainder = num % n  # Modulo operator to get the remainder
+
+    # Create a list with the quotient as the initial value for each part
+    parts = [quotient] * n
+
+    # Distribute the remainder across the parts
+    for i in range(remainder):
+        parts[i] += 1
+
+    return parts
+
+
 def _generate_horizontal_text(
     text,
     fonts,
@@ -80,13 +101,19 @@ def _generate_horizontal_text(
     space_width,
     character_spacing,
     fit,
-    word_split,
+    word_split=False,
     stroke_width=0,
     stroke_fill="#282828",
+    multi_line=False,
+    line_max=32,
 ):
-    choice_list = np.random.choice(len(fonts), len(text), replace=True)
+    choice_list = np.random.choice(
+        len(fonts), len(text), replace=True
+    )  # A font can be selected multiple times
     choice_set = set(choice_list)
     image_fonts = [ImageFont.truetype(font=font, size=font_size) for font in fonts]
+
+    # Compute max space width for all fonts
     space_width = max(
         [
             get_text_width(image_fonts[choice], " ") * space_width
@@ -103,22 +130,74 @@ def _generate_horizontal_text(
     else:
         splitted_text = text
 
+    # Compute text width for corresponding fonts
     piece_widths = [
         _compute_character_width(image_fonts[choice_list[i]], p)
         if p != " "
         else space_width
         for i, p in enumerate(splitted_text)
     ]
-    text_width = sum(piece_widths)
-    if not word_split:
-        text_width += character_spacing * (len(text) - 1)
 
-    text_height = max(
-        [
+    # Compute width and height of the entire image
+    if multi_line:
+        line_num = rnd.randint(1, 4)  # random number of lines
+        if len(text) / line_num >= line_max:
+            line_num = math.ceil(len(text) / line_max)
+
+        assert line_num <= 4
+
+        if len(text) >= line_num and line_num != 1:
+            text_nums = split_integer_evenly(len(text), line_num)
+        else:
+            text_nums = [len(text)]
+
+        piece_heights = [
             get_text_height(image_fonts[choice_list[i]], p)
             for i, p in enumerate(splitted_text)
         ]
-    )
+
+        index = 0
+        text_widths = []
+        text_heights = []
+        x_indexes = []
+        y_positions = []
+        for i, text_num in enumerate(text_nums):
+            count_width = 0
+            piece_height = []
+
+            # Compute the width of a line
+            for _ in range(text_num):
+                count_width += piece_widths[index]
+                piece_height.append(piece_heights[index])
+                index += 1
+            if not word_split:
+                count_width += character_spacing * (text_num - 1)
+
+            max_line_height = max(piece_height)
+            text_widths.append(count_width)
+            text_heights.append(max_line_height)
+
+            # Compute y of start point in each line
+            for _ in range(text_num):
+                x_indexes.append(sum(text_nums[:i]))
+                y_positions.append(sum(text_heights[:i]))
+
+        text_width = max(text_widths)
+        text_height = sum(text_heights)
+    else:
+        line_num = 1
+        x_indexes = [0 for _ in range(len(splitted_text))]
+        y_positions = [0 for _ in range(len(splitted_text))]
+        text_width = sum(piece_widths)
+        if not word_split:
+            text_width += character_spacing * (len(text) - 1)
+
+        text_height = max(
+            [
+                get_text_height(image_fonts[choice_list[i]], p)
+                for i, p in enumerate(splitted_text)
+            ]
+        )
 
     txt_img = Image.new("RGBA", (text_width, text_height), (0, 0, 0, 0))
     txt_mask = Image.new("RGB", (text_width, text_height), (0, 0, 0))
@@ -127,7 +206,14 @@ def _generate_horizontal_text(
     txt_mask_draw = ImageDraw.Draw(txt_mask, mode="RGB")
     txt_mask_draw.fontmode = "1"
 
-    for i, p in enumerate(splitted_text):
+    new_text = []
+    prev_x = 0
+    for i, (p, x, y) in enumerate(zip(splitted_text, x_indexes, y_positions)):
+        if x != prev_x:
+            prev_x = x
+            new_text.append("\\\\")
+        new_text.append(p)
+
         fill_colors = list(
             colorsys.hls_to_rgb(
                 rnd.uniform(0, 1), rnd.uniform(0, 0.7), rnd.uniform(0, 1)
@@ -149,7 +235,11 @@ def _generate_horizontal_text(
             int(stroke_colors[2] * 255),
         )
         txt_img_draw.text(
-            (sum(piece_widths[0:i]) + i * character_spacing * int(not word_split), 0),
+            (
+                sum(piece_widths[x:i])
+                + (i - x) * character_spacing * int(not word_split),
+                y,
+            ),
             p,
             fill=fill,
             font=image_fonts[choice_list[i]],
@@ -157,7 +247,11 @@ def _generate_horizontal_text(
             stroke_fill=stroke_fill,
         )
         txt_mask_draw.text(
-            (sum(piece_widths[0:i]) + i * character_spacing * int(not word_split), 0),
+            (
+                sum(piece_widths[x:i])
+                + (i - x) * character_spacing * int(not word_split),
+                y,
+            ),
             p,
             fill=((i + 1) // (255 * 255), (i + 1) // 255, (i + 1) % 255),
             font=image_fonts[choice_list[i]],
@@ -165,10 +259,23 @@ def _generate_horizontal_text(
             stroke_fill=stroke_fill,
         )
 
-    if fit:
-        return txt_img.crop(txt_img.getbbox()), txt_mask.crop(txt_img.getbbox())
+    if "\\\\" in new_text:
+        new_text = (
+            "\\begin{matrix} "
+            + " ".join(new_text).replace("   ", " ")
+            + " \\end{matrix}"
+        )
     else:
-        return txt_img, txt_mask
+        new_text = text
+
+    if fit:
+        return (
+            txt_img.crop(txt_img.getbbox()),
+            txt_mask.crop(txt_img.getbbox()),
+            line_num,
+        )
+    else:
+        return txt_img, txt_mask, line_num, new_text
 
 
 def _generate_vertical_text(

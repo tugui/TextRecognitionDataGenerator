@@ -1,8 +1,8 @@
 import os
 from typing import List, Tuple
 
-from trdg.generators.from_strings import GeneratorFromStrings
 from trdg.data_generator import FakeTextDataGenerator
+from trdg.generators.from_strings import GeneratorFromStrings
 from trdg.string_generator import create_strings_from_dict
 from trdg.utils import load_dict, load_fonts
 
@@ -45,6 +45,8 @@ class GeneratorFromDict:
         output_bboxes: int = 0,
         path: str = "",
         rtl: bool = False,
+        multi_line: bool = False,
+        line_max: int = 32,
     ):
         self.count = count
         self.length = length
@@ -94,6 +96,8 @@ class GeneratorFromDict:
             image_mode,
             output_bboxes,
             rtl,
+            multi_line,
+            line_max,
         )
 
     def __iter__(self):

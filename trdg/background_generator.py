@@ -1,9 +1,9 @@
-import cv2
 import math
 import os
 import random as rnd
-import numpy as np
 
+import cv2
+import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 
 
@@ -13,10 +13,14 @@ def gaussian_noise(height: int, width: int) -> Image:
     """
 
     # We create an all white image
-    image = np.ones((height, width)) * 255
+    image = np.ones((height, width, 3), dtype=np.uint8) * rnd.randint(240, 255)
 
     # We add gaussian noise
-    cv2.randn(image, 235, 10)
+    cv2.randn(
+        image,
+        (rnd.randint(192, 224), rnd.randint(192, 224), rnd.randint(192, 224)),
+        (rnd.randint(0, 32), rnd.randint(0, 32), rnd.randint(0, 32)),
+    )
 
     return Image.fromarray(image).convert("RGBA")
 

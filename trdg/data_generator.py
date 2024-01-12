@@ -3,8 +3,7 @@ import random as rnd
 
 from PIL import Image, ImageFilter, ImageStat
 
-from trdg import (background_generator, computer_text_generator,
-                  distorsion_generator)
+from trdg import background_generator, computer_text_generator, distorsion_generator
 from trdg.utils import make_filename_valid, mask_to_bboxes
 
 try:
@@ -55,6 +54,8 @@ class FakeTextDataGenerator(object):
         stroke_fill="#282828",
         image_mode="RGB",
         output_bboxes=0,
+        multi_line=False,
+        line_max=32,
     ):
         image = None
 
@@ -70,7 +71,7 @@ class FakeTextDataGenerator(object):
                 raise ValueError("Vertical handwritten text is unavailable")
             image, mask = handwritten_text_generator.generate(text, text_color)
         else:
-            image, mask = computer_text_generator.generate(
+            image, mask, line_num, new_text = computer_text_generator.generate(
                 text,
                 fonts,
                 text_color,
@@ -82,6 +83,8 @@ class FakeTextDataGenerator(object):
                 word_split,
                 stroke_width,
                 stroke_fill,
+                multi_line,
+                line_max,
             )
         random_angle = rnd.randint(0 - skewing_angle, skewing_angle)
 
@@ -127,6 +130,7 @@ class FakeTextDataGenerator(object):
 
         # Horizontal text
         if orientation == 0:
+            size *= line_num
             new_width = int(
                 distorted_img.size[0]
                 * (float(size - vertical_margin) / float(distorted_img.size[1]))
@@ -134,7 +138,9 @@ class FakeTextDataGenerator(object):
             resized_img = distorted_img.resize(
                 (new_width, size - vertical_margin), Image.LANCZOS
             )
-            resized_mask = distorted_mask.resize((new_width, size - vertical_margin), Image.NEAREST)
+            resized_mask = distorted_mask.resize(
+                (new_width, size - vertical_margin), Image.NEAREST
+            )
             background_width = width if width > 0 else new_width + horizontal_margin
             background_height = size
         # Vertical text
@@ -286,4 +292,4 @@ class FakeTextDataGenerator(object):
         else:
             if output_mask == 1:
                 return final_image, final_mask
-            return final_image
+            return final_image, new_text

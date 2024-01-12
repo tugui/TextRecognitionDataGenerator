@@ -1,11 +1,13 @@
 import os
 import random
-from trdg.data_generator import FakeTextDataGenerator
-from trdg.utils import load_dict, load_fonts
 
 # support RTL
 from arabic_reshaper import ArabicReshaper
 from bidi.algorithm import get_display
+
+from trdg.data_generator import FakeTextDataGenerator
+from trdg.utils import load_dict, load_fonts
+
 
 class GeneratorFromStrings:
     """Generator that uses a given list of strings"""
@@ -43,6 +45,8 @@ class GeneratorFromStrings:
         image_mode="RGB",
         output_bboxes=0,
         rtl=False,
+        multi_line=False,
+        line_max=32,
     ):
         self.count = count
         self.strings = strings
@@ -87,6 +91,8 @@ class GeneratorFromStrings:
         self.stroke_width = stroke_width
         self.stroke_fill = stroke_fill
         self.image_mode = image_mode
+        self.multi_line = multi_line
+        self.line_max = line_max
 
     def __iter__(self):
         return self
@@ -98,10 +104,11 @@ class GeneratorFromStrings:
         if self.generated_count == self.count:
             raise StopIteration
         self.generated_count += 1
+        text = self.strings[(self.generated_count - 1) % len(self.strings)]
         return (
             FakeTextDataGenerator.generate(
                 self.generated_count,
-                self.strings[(self.generated_count - 1) % len(self.strings)],
+                text,
                 self.fonts,
                 None,
                 random.randint(self.size[0], self.size[1]),
@@ -130,9 +137,10 @@ class GeneratorFromStrings:
                 self.stroke_fill,
                 self.image_mode,
                 self.output_bboxes,
+                self.multi_line,
+                self.line_max,
             ),
-            self.orig_strings[(self.generated_count - 1) % len(self.orig_strings)] if self.rtl else self.strings[(self.generated_count - 1) % len(self.strings)],
-            self.fonts[(self.generated_count - 1) % len(self.fonts)]
+            self.fonts[(self.generated_count - 1) % len(self.fonts)],
         )
 
     def reshape_rtl(self, strings: list, rtl_shaper: ArabicReshaper):
