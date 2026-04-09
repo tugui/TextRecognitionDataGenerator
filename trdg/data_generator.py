@@ -56,6 +56,7 @@ class FakeTextDataGenerator(object):
         output_bboxes=0,
         multi_line=False,
         line_max=32,
+        font_sequence=None,
     ):
         image = None
 
@@ -85,6 +86,7 @@ class FakeTextDataGenerator(object):
                 stroke_fill,
                 multi_line,
                 line_max,
+                font_sequence,
             )
         random_angle = rnd.randint(0 - skewing_angle, skewing_angle)
 

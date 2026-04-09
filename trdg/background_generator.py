@@ -13,16 +13,13 @@ def gaussian_noise(height: int, width: int) -> Image:
     """
 
     # We create an all white image
-    channel1 = np.ones((height, width), dtype=np.uint8) * rnd.randint(240, 255)
-    channel2 = np.ones((height, width), dtype=np.uint8) * rnd.randint(240, 255)
-    channel3 = np.ones((height, width), dtype=np.uint8) * rnd.randint(240, 255)
-    image = np.dstack((channel1, channel2, channel3))
+    image = np.zeros((height, width, 3), dtype=np.uint8)
 
     # We add gaussian noise
     cv2.randn(
         image,
-        (rnd.randint(192, 224), rnd.randint(192, 224), rnd.randint(192, 224)),
-        (rnd.randint(0, 32), rnd.randint(0, 32), rnd.randint(0, 32)),
+        (rnd.randint(192, 255), rnd.randint(192, 255), rnd.randint(192, 255)),
+        (rnd.randint(0, 16), rnd.randint(0, 16), rnd.randint(0, 16)),
     )
 
     return Image.fromarray(image).convert("RGBA")

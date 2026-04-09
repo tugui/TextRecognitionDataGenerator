@@ -37,6 +37,7 @@ def generate(
     stroke_fill="#282828",
     multi_line=False,
     line_max=32,
+    font_sequence=None,
 ):
     if orientation == 0:
         return _generate_horizontal_text(
@@ -52,6 +53,7 @@ def generate(
             stroke_fill,
             multi_line,
             line_max,
+            font_sequence=font_sequence,
         )
     elif orientation == 1:
         return _generate_vertical_text(
@@ -106,10 +108,15 @@ def _generate_horizontal_text(
     stroke_fill="#282828",
     multi_line=False,
     line_max=32,
+    font_sequence=None,
 ):
-    choice_list = np.random.choice(
-        len(fonts), len(text), replace=True
-    )  # A font can be selected multiple times
+    if font_sequence is not None:
+        # 将字体路径映射为 fonts 列表下标，与原 choice_list 语义一致
+        font_to_idx = {f: i for i, f in enumerate(fonts)}
+        choice_list = np.array([font_to_idx[f] for f in font_sequence])
+    else:
+        choice_list = np.random.choice(len(fonts), len(text), replace=True)
+
     choice_set = set(choice_list)
     image_fonts = [ImageFont.truetype(font=font, size=font_size) for font in fonts]
 
@@ -140,11 +147,11 @@ def _generate_horizontal_text(
 
     # Compute width and height of the entire image
     if multi_line:
-        line_num = rnd.randint(1, 4)  # random number of lines
+        line_num = rnd.randint(1, 20)  # random number of lines
         if len(text) / line_num >= line_max:
             line_num = math.ceil(len(text) / line_max)
 
-        assert line_num <= 4
+        assert line_num <= 20
 
         if len(text) >= line_num and line_num != 1:
             text_nums = split_integer_evenly(len(text), line_num)
