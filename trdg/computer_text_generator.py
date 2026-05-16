@@ -111,9 +111,18 @@ def _generate_horizontal_text(
     font_sequence=None,
 ):
     if font_sequence is not None:
-        # 将字体路径映射为 fonts 列表下标，与原 choice_list 语义一致
-        font_to_idx = {f: i for i, f in enumerate(fonts)}
-        choice_list = np.array([font_to_idx[f] for f in font_sequence])
+        font_to_idx = {f: idx for idx, f in enumerate(fonts)}
+        # font_sequence 只含非空格字符的字体，需要扩展到含空格的长度
+        choice_list = []
+        char_iter = iter(font_sequence)  # 非空格字符字体的迭代器
+        last_idx = 0
+        for ch in text:                  # text 是原始含空格字符串
+            if ch == " ":
+                choice_list.append(last_idx)   # 空格沿用上一字符的字体
+            else:
+                last_idx = font_to_idx[next(char_iter)]
+                choice_list.append(last_idx)
+        choice_list = np.array(choice_list)
     else:
         choice_list = np.random.choice(len(fonts), len(text), replace=True)
 

@@ -45,7 +45,6 @@ def create_strings_from_font_dicts(
             seq.append(font)
             if i < token_count - 1:
                 chars.append(" ")
-                seq.append(font)   # 空格沿用前字符字体，保证长度对齐
         strings.append("".join(chars))
         font_sequences.append(seq)
 
